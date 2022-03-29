@@ -1,0 +1,189 @@
+---
+title: "Case Study 1"
+author: "Nicolas Bschor 12132344"
+date: '2022-03-29'
+output: pdf_document
+---
+
+```{r setup}
+library(microbenchmark)
+```
+
+# Ratio of Fibonacci numbers
+
+## 1
+
+```{r, include=FALSE}
+ratio_fibonacci_for <- function(n) {
+  f0 <- 0
+  f1 <- 1
+  r_f = 1:n
+  
+  if(n == 0) {
+    return(0)  
+  }
+  
+  for(i in 1:n) {
+    f_new <- f0 + f1
+    f0 <- f1
+    f1 <- f_new
+    
+    r_f[i]<- f1/ f0
+  }
+  
+  return(r_f)
+}
+
+```
+
+```{r, include=FALSE}
+ratio_fibonacci_while <- function(n) {
+  i <- 0
+  f0 <- 0
+  f1 <- 1
+  r_f = 1:n
+  
+  if(n == 0) {
+    return(0)  
+  }
+  
+  while(i < n) {
+    i <- i+1
+    f_new <- f0 + f1
+    f0 <- f1
+    f1 <- f_new
+    
+    r_f[i]<- f1/ f0
+  }
+  
+  return(r_f)
+}
+```
+
+## 2
+
+```{r}
+microbenchmark(ratio_fibonacci_for(100), ratio_fibonacci_for(1000))
+microbenchmark(ratio_fibonacci_while(100), ratio_fibonacci_while(1000))
+```
+
+## 3 
+```{r}
+plot(ratio_fibonacci_for(100), type="l", main="Ratio of Fibonacci numbers", xlab="x", ylab="y")
+```
+
+# The golden ratio 
+
+```{r}
+phi <- (sqrt(5) + 1) / 2
+x <- 1:1000
+phi_power = phi^(x+1)
+phi_sum = phi^(x) + phi^(x-1)
+
+res_equal_op <- phi_sum == phi_power
+length(res_equal_op[res_equal_op==TRUE]) == length(res_equal_op)
+
+res_all_equal <- all.equal(phi_power, phi_sum)
+res_all_equal
+```
+
+# Game of craps
+
+```{r}
+roll_dice <- function() {return(sample(1:6, 1) + sample(1:6, 1))}
+
+game_of_craps <- function() {
+  res_1 <- roll_dice()
+  if(res_1 == 7 || res_1 == 11) {
+    return(TRUE)
+  }
+  
+  while(TRUE) {
+    res_n <- roll_dice()
+    
+    if(res_n == res_1)
+      return(TRUE)
+    else if(res_n == 7 || res_n == 11) 
+      return(FALSE)
+  }
+} 
+```
+
+# Readable and efficient code
+
+## Function foobar0
+
+```{r}
+foobar0 <- function(x, z) {
+  if (sum(x >= .001) < 1) {
+    stop("step 1 requires 1 observation(s) with value >= .001")
+  }
+  fit <- lm(x ~ z)
+  r <- fit$residuals
+  x <- sin(r) + .01
+  
+  if (sum(x >= .002) < 2) {
+    stop("step 2 requires 2 observation(s) with value >= .002")
+  }
+  fit <- lm(x ~ z)
+  r <- fit$residuals
+  x <- 2 * sin(r) + .02
+  
+  if (sum(x >= .003) < 3) {
+    stop("step 3 requires 3 observation(s) with value >= .003")
+  }
+  fit <- lm(x ~ z)
+  r <- fit$residuals
+  x <- 3 * sin(r) + .03
+  
+  if (sum(x >= .004) < 4) {
+    stop("step 4 requires 4 observation(s) with value >= .004")
+  }
+  fit <- lm(x ~ z)
+  r <- fit$residuals
+  x <- 4 * sin(r) + .04
+  
+  return(x)
+}
+```
+
+## Funciton improoved
+
+```{r}
+transform_input <- function(x, z, n) {
+  fit <- lm(x ~ z)
+  r <- fit$residuals
+  return(n * sin(r) + (.01 * n))
+}
+
+check_input <- function(x, n) {
+  if (sum(x >= (n*.001)) < n) {
+    stop(paste("step ", n, " requires ", n, " observation(s) with value >= ", (n * .001), sep = " "))
+  }
+}
+
+foobar <- function(x, z) {
+  for(i in 1:4) {
+    check_input(x, i)
+    x <- transform_input(x, z, i)
+  }
+
+  return(x)
+}
+```
+
+## Validation 
+
+```{r}
+for(i in 1:00) {
+  set.seed(1)
+  x <- rnorm(100)
+  z <- rnorm(100)
+  
+  if(!all.equal(foobar0(x,z), foobar(x, z))) {
+    stop("Functions produce different output")
+  }
+}
+
+print("Functions produce equal output")
+```
