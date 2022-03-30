@@ -5,6 +5,8 @@ date: '2022-03-29'
 output: pdf_document
 ---
 
+First we have to define the libraries we will use in the project.
+
 ```{r setup}
 library(microbenchmark)
 ```
@@ -13,7 +15,10 @@ library(microbenchmark)
 
 ## 1
 
-```{r, include=FALSE}
+In this exercise we write the Ratio of Fibonacci numbers given as $r_n = F_{n+1} / F_n$ with $F_n$ as the $n$th Fibonacci number. First with a ``for`` loop: 
+
+
+```{r}
 ratio_fibonacci_for <- function(n) {
   f0 <- 0
   f1 <- 1
@@ -36,7 +41,9 @@ ratio_fibonacci_for <- function(n) {
 
 ```
 
-```{r, include=FALSE}
+and afterwards with a ``while`` loop: 
+
+```{r}
 ratio_fibonacci_while <- function(n) {
   i <- 0
   f0 <- 0
@@ -60,19 +67,54 @@ ratio_fibonacci_while <- function(n) {
 }
 ```
 
+We can check if both functions create the same output. 
+
+```{r}
+set.seed(420)
+functions_equal <- TRUE
+
+for(rand_int in sample.int(n = 100, size = 10)) {
+  n_rf_for <- ratio_fibonacci_for(rand_int)
+  n_rf_while <- ratio_fibonacci_while(rand_int)
+  
+  if(!all.equal(n_rf_for, n_rf_while)) {
+    functions_equal <- FALSE
+    break
+  }
+}
+
+if(functions_equal) {
+  print("Functions produce the same output")
+} else {
+  print("Functions don't produce the same output")
+}
+  
+```
+
 ## 2
 
+With the ``microbenchmark`` command we can compare the two functions with $100$ and 
+$1000$ as input values.
+
 ```{r}
-microbenchmark(ratio_fibonacci_for(100), ratio_fibonacci_for(1000))
-microbenchmark(ratio_fibonacci_while(100), ratio_fibonacci_while(1000))
+microbenchmark(ratio_fibonacci_for(100), ratio_fibonacci_for(1000), 
+               ratio_fibonacci_while(100), ratio_fibonacci_while(1000))
 ```
+Given the results, we can see that the function with a ``for`` loop is faster in 
+general with 100 or 1000 values.  
+
 
 ## 3 
+
 ```{r}
-plot(ratio_fibonacci_for(100), type="l", main="Ratio of Fibonacci numbers", xlab="x", ylab="y")
+rf <- ratio_fibonacci_for(100)
+plot(rf, type="l", main="Ratio of Fibonacci numbers", xlab="x", ylab="y")
 ```
 
-# The golden ratio 
+In the plot we can see, that the ratio fibonacci series converge to `r rf[100]`.
+
+
+# The golden ratio
 
 ```{r}
 phi <- (sqrt(5) + 1) / 2
@@ -86,14 +128,22 @@ length(res_equal_op[res_equal_op==TRUE]) == length(res_equal_op)
 res_all_equal <- all.equal(phi_power, phi_sum)
 res_all_equal
 ```
+With the ``==`` operator we can see that the two arrays doesn't are the same. 
+So there are some differences, but these are very small ($\Delta \approx 10^-16$). 
+This is probably do to the numeric handling of the numbers. 
+The ``all.equal`` function tested the two arrays if they are 'near equality', 
+so the small rounding differences are not taken into account.
+Using this function, we can see that $\Phi^{n+1} = \Phi^n + \Phi^{n-1}$.
 
 # Game of craps
 
 ```{r}
-roll_dice <- function() {return(sample(1:6, 1) + sample(1:6, 1))}
+roll_dice <- function() {return( sum(sample(1:6, 2)) )}
 
 game_of_craps <- function() {
+  
   res_1 <- roll_dice()
+  
   if(res_1 == 7 || res_1 == 11) {
     return(TRUE)
   }
@@ -109,9 +159,25 @@ game_of_craps <- function() {
 } 
 ```
 
+We created the function ``roll_dice`` which returns the sum of two random numbers ranging from $1$ to $6$.
+In the ``game_of_craps`` function the main game is simulated. It returns ``TRUE`` if the game is won, 
+``FALSE`` when the player lost the game. 
+
+First the function ``roll_dice`` is called and the result is stored in the ``res_1`` variable. 
+If the result is $7$ or $11$ the player wins the game, if not the second part 
+of the games starts in a ``while`` loop. 
+It starts by roll the dice again and the result is stored in the variable ``res_n``. 
+Now the result of the first roll_dice and the one in the while loop are compared. 
+If they are equal the program stops with ``TRUE``. 
+If the new result is $7$ or $11$ the program terminates with ``FALSE``. 
+In every other case the program starts again.
+
+
 # Readable and efficient code
 
 ## Function foobar0
+
+First we can define the 'bad' function foobar0.
 
 ```{r}
 foobar0 <- function(x, z) {
@@ -147,7 +213,9 @@ foobar0 <- function(x, z) {
 }
 ```
 
-## Funciton improoved
+## Function improve
+
+Now we can improve the function by reducing repetitive and combine different parts in functions. 
 
 ```{r}
 transform_input <- function(x, z, n) {
@@ -158,7 +226,8 @@ transform_input <- function(x, z, n) {
 
 check_input <- function(x, n) {
   if (sum(x >= (n*.001)) < n) {
-    stop(paste("step ", n, " requires ", n, " observation(s) with value >= ", (n * .001), sep = " "))
+    stop(paste("step", n, "requires", n, 
+               "observation(s) with value >=", (n * .001), sep = " "))
   }
 }
 
@@ -173,6 +242,8 @@ foobar <- function(x, z) {
 ```
 
 ## Validation 
+
+To check the new function we can use the following code.
 
 ```{r}
 for(i in 1:00) {
