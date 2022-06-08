@@ -1,0 +1,8 @@
+output*/
+.idea/
+input/
+libs/
+out/
+venv/
+MapReduce.iml
+stopwords.txt
