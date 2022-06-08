@@ -1,0 +1,158 @@
+---
+title: 'Case Study 3: Visualization'
+author: "Nicolas Bschor"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("tidyverse")
+library("plotly")
+```
+
+### Load the Data
+
+```{r}
+colors <- c("#006699", "#E18922")
+
+col_names <- c("country_name", "official_name_en", "iso_3166_2", "iso_3166_3", 
+               "region_name", "sub_region_name", "developed", "age_median", 
+               "youth_unempl_rate", "above_average_median_age", "above_average_yu")
+
+df_vars <- read.csv("df_vars.csv", sep = ";", header = FALSE, col.names=col_names, na.strings = ".", dec = ",")
+
+df_vars <- df_vars %>% 
+  filter(!is.na(`developed`) & !is.na(`iso_3166_2`)) %>% 
+  mutate(`above_average_median_age` = ifelse(is.na(`above_average_median_age`), NA, `above_average_median_age`=='yes')) %>%
+  mutate(`above_average_yu` =  ifelse(is.na(`above_average_yu`), NA, `above_average_yu`=='yes'))
+```
+
+### Density plot of the median age grouped by the development status  
+
+```{r warning = FALSE}
+df_vars %>% 
+  mutate(development = ifelse(`developed`, 'Developed', 'Not Developed')) %>%
+  ggplot(aes(x = `age_median`, group = `development`)) +
+  geom_density(aes(fill = `development`), alpha = 0.5, color="black") + 
+  xlab("Median age of population") +
+  guides(fill = guide_legend(title = NULL)) +
+  theme(legend.justification = c("center", "top"), legend.position = c(0.5, 0.98))+
+  scale_fill_manual("legend", values = c("Developed" = "#006699", "Not Developed" = "#E18922"))
+```
+
+As one can see, the most developed countries have a median age at around 42/43.
+The which are not developed have less median age in general. They are equally distributed from 20 to around 32. 
+
+
+### Density plot of the youth unemployment rate grouped by the development status
+
+```{r warning = FALSE}
+df_vars %>% 
+  mutate(development = ifelse(`developed`, 'Developed', 'Not Developed')) %>%
+  ggplot(aes(x = `youth_unempl_rate`, group = `development`)) +
+  geom_density(aes(fill = `development`), alpha = 0.5, color="black") + 
+  xlab("Youth unemployment rate") +
+  guides(fill = guide_legend(title = NULL)) +
+  theme(legend.justification = c("center", "top"), legend.position = c(0.5, 0.98)) +
+  scale_fill_manual("legend", values = c("Developed" = "#006699", "Not Developed" = "#E18922"))
+```
+
+The most countries have a youth unemployment rate at around 10% regardless of the development status. The most developed countries are in between 5% and 22% and another much lower peak at ≈ 23%. The not developed countries also have a peak at around 10% and then they get less with higher unemployment rate. 
+
+### Developed and not developed country per region
+
+```{r warning = FALSE}
+df_vars %>% 
+  mutate(Development = ifelse(`developed`, 'Developed', 'Not Developed')) %>%
+  ggplot(aes(x = `region_name`, fill = `Development`)) +
+  geom_bar() +
+  xlab("Region Name") +
+  scale_fill_manual("Development", values = c("Developed" = "#006699", "Not Developed" = "#E18922")) 
+```
+
+```{r warning = FALSE}
+df_vars %>% 
+  mutate(Development = ifelse(`developed`, 'Developed', 'Not Developed')) %>%
+  ggplot(aes(x = `region_name`, fill = `Development`)) +
+  geom_bar(position = "fill") +
+  xlab("Region Name") +
+  scale_fill_manual("Development", values = c("Developed" = "#006699", "Not Developed" = "#E18922")) 
+```
+
+In the plots one can see, that Europe has only developed countries. Therefore it has the most absolute developed countries. The region with the second most developed countries (relative and absolute) is America. Asia is on the third place and Oceania on the fourth, regarding absolute numbers. But Oceania has a higher relative amount. Africa don’t have any developed countries. 
+
+### Relationship between median age and youth unemployment rate
+```{r warning = FALSE}
+df_vars %>%  
+  mutate(Development = ifelse(`developed`, 'Developed', 'Not Developed')) %>%
+  ggplot(aes(x=`youth_unempl_rate`, y=`age_median`, color=`Development`)) +
+  geom_point() +
+  geom_smooth(method='lm')+
+  xlab("Youth unemployment rate") +
+  ylab("Median age") 
+```
+
+In the depicted plot one can tell from the regression line, that the variables of the youth unemployment rate and the median age have a relationship. The higher the unemployment rate, the median age also increases. The regression lines for the developed and the not developed countries seem to have an equal slope but, the intercept of the median age is a lot higher, which means that the average age is higher in developed countries.
+
+### Boxplots for the youth unemployment of every region
+```{r warning = FALSE}
+df_vars %>%  
+  ggplot(aes(x=`region_name`, y=`youth_unempl_rate`)) + 
+  geom_boxplot( ) + 
+  xlab("Youth unemployment rate") +
+  ylab("Region") 
+```
+
+The median of the youth unemployment rate is similar for every region. There aren’t any striking differences, except every which hast the most differences between the mini and maximum value.
+
+### Boxplots for the median age of every region
+```{r warning = FALSE}
+df_vars %>%  
+  ggplot(aes(x=`region_name`, y=`age_median`)) + 
+  geom_boxplot( ) + 
+  xlab("Median age") +
+  ylab("Region") 
+```
+
+The median age of Africa is significantly lower compared to the other regions, while Europe has the highest. They countries in these both regions also have the most similar median ages, since the boxplot doesn’t have a huge size. America, Asia and Oceania have more similar boxplots. Africa has also the highest number of outliers.
+
+### Average youth unemployment rate in every sub-region
+```{r warning = FALSE}
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+df_vars %>%  
+  group_by(`region_name`, `sub_region_name`) %>%
+  summarize(avg_yur = mean(`youth_unempl_rate`, na.rm=TRUE)) %>%
+  
+  
+  ggplot(aes(x=`avg_yur`, y=fct_reorder(`sub_region_name`, `avg_yur`), color=`region_name`)) +
+  geom_point(size=4) +
+  xlab("Average youth unemployment rate") +
+  ylab("Sub-Region") + 
+  scale_colour_discrete("Continents") + 
+  scale_color_manual(values = cbPalette)
+```
+
+### Relationship between median age and youth unemployment rate with the population
+
+```{r warning = FALSE, message=FALSE}
+df_population <- read.csv("df_population.csv", sep = ",", header = TRUE)
+
+df_vars_population <- df_vars %>% 
+  left_join(df_population, by=c("iso_3166_3"="Country.Code"))
+
+fig <- df_vars_population %>%  
+  mutate(Development = ifelse(`developed`, 'Developed', 'Not Developed')) %>%
+  mutate(Population = `X2020`) %>%
+  mutate("Youth unemployment rate"= `youth_unempl_rate`) %>%
+  mutate("Median age"= `age_median`) %>%
+  ggplot(aes(text=`country_name`, x =`Youth unemployment rate`, y=`Median age`, color=`Development`)) +
+  geom_point(aes(size = `Population`)) 
+
+ggplotly(fig, tooltip = c("text", "x", "y", "size"))
+  
+```
